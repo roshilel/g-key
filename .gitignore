@@ -1,0 +1,12 @@
+build/
+
+.cache/
+
+compile_commands.json
+
+*.swp
+.DS_Store
+
+sdkconfig
+sdkconfig.old
+sdkconfig.defaults.*
