@@ -52,7 +52,7 @@
  * please ignore.
  */
 
-#define HID_DEMO_TAG "HID_DEMO"
+#define HID_DEMO_TAG "Aron's ESP-32 log"
 
 static uint16_t hid_conn_id = 0;
 static bool sec_conn = false;
@@ -62,7 +62,7 @@ static bool send_volum_up = false;
 static void hidd_event_callback(esp_hidd_cb_event_t event,
                                 esp_hidd_cb_param_t *param);
 
-#define HIDD_DEVICE_NAME "HID"
+#define HIDD_DEVICE_NAME "Aron's ESP-32"
 static uint8_t hidd_service_uuid128[] = {
     /* LSB
        <-------------------------------------------------------------------------------->
@@ -80,7 +80,7 @@ static esp_ble_adv_data_t hidd_adv_data = {
                             // min_interval * 1.25 msec
     .max_interval = 0x0010, // slave connection max interval, Time =
                             // max_interval * 1.25 msec
-    .appearance = 0x03c0, // HID Generic,
+    .appearance = 0x03c0,   // HID Generic,
     .manufacturer_len = 0,
     .p_manufacturer_data = NULL,
     .service_data_len = 0,
@@ -100,6 +100,8 @@ static esp_ble_adv_params_t hidd_adv_params = {
     .channel_map = ADV_CHNL_ALL,
     .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
+
+#define LED 13
 
 static void hidd_event_callback(esp_hidd_cb_event_t event,
                                 esp_hidd_cb_param_t *param) {
@@ -188,23 +190,25 @@ void hid_demo_task(void *pvParameters) {
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   while (1) {
     vTaskDelay(2000 / portTICK_PERIOD_MS);
-    if (sec_conn) {
-      ESP_LOGI(HID_DEMO_TAG, "Send the volume");
-      send_volum_up = true;
-      // uint8_t key_vaule = {HID_KEY_A};
-      // esp_hidd_send_keyboard_value(hid_conn_id, 0, &key_vaule, 1);
-      esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_UP, true);
-      vTaskDelay(3000 / portTICK_PERIOD_MS);
-      if (send_volum_up) {
-        send_volum_up = false;
-        esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_UP,
-                                     false);
-        esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_DOWN,
-                                     true);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-        esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_DOWN,
-                                     false);
-      }
+    if (sec_conn) { // checking for secure connection
+      char *thisTaskName = pcTaskGetName(NULL);
+      ESP_LOGI(thisTaskName, "Aron's ESP-32 connected");
+      uint8_t key_a[1] = {HID_KEY_A};
+
+      // send_volum_up = true;
+      // // uint8_t key_vaule = {HID_KEY_A};
+      // // esp_hidd_send_keyboard_value(hid_conn_id, 0, &key_vaule, 1);
+      // esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_UP,
+      // true); vTaskDelay(3000 / portTICK_PERIOD_MS); if (send_volum_up) {
+      //   send_volum_up = false;
+      //   esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_UP,
+      //                                false);
+      //   esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_DOWN,
+      //                                true);
+      //   vTaskDelay(3000 / portTICK_PERIOD_MS);
+      //   esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_DOWN,
+      //                                false);
+      // }
     }
   }
 }
