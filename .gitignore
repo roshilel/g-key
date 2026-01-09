@@ -10,3 +10,5 @@ compile_commands.json
 sdkconfig
 sdkconfig.old
 sdkconfig.defaults.*
+
+managed_components/
