@@ -52,7 +52,7 @@
  * please ignore.
  */
 
-#define HID_DEMO_TAG "Aron's ESP-32 log"
+#define HID_DEMO_TAG "esp32_keybooard"
 
 static uint16_t hid_conn_id = 0;
 static bool sec_conn = false;
@@ -62,7 +62,7 @@ static bool send_volum_up = false;
 static void hidd_event_callback(esp_hidd_cb_event_t event,
                                 esp_hidd_cb_param_t *param);
 
-#define HIDD_DEVICE_NAME "Aron's ESP-32"
+#define HIDD_DEVICE_NAME "ESP-32 KEYBOARD"
 static uint8_t hidd_service_uuid128[] = {
     /* LSB
        <-------------------------------------------------------------------------------->
@@ -192,9 +192,12 @@ void hid_demo_task(void *pvParameters) {
     vTaskDelay(2000 / portTICK_PERIOD_MS);
     if (sec_conn) { // checking for secure connection
       char *thisTaskName = pcTaskGetName(NULL);
-      ESP_LOGI(thisTaskName, "Aron's ESP-32 connected");
-      uint8_t key_a[1] = {HID_KEY_A};
+      ESP_LOGI(thisTaskName, "ESP-32 KEYBOARD connected");
+      uint8_t g_key[1] = {HID_KEY_G};
 
+      esp_hidd_send_keyboard_value(hid_conn_id, 0, g_key, 1);
+
+      esp_hidd_send_keyboard_value(hid_conn_id, 0, NULL, 0);
       // send_volum_up = true;
       // // uint8_t key_vaule = {HID_KEY_A};
       // // esp_hidd_send_keyboard_value(hid_conn_id, 0, &key_vaule, 1);
