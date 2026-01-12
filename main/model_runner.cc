@@ -8,6 +8,11 @@
 #include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
+// global vars
+static tflite::MicroInterpreter *interpreter_ptr = nullptr;
+static TfLiteTensor *input_tensor_ptr =
+    nullptr; // pointer to model's input tensor
+
 using NextKeyOpsResolver = tflite::MicroMutableOpResolver<4>;
 
 static TfLiteStatus RegisterOps(NextKeyOpsResolver &op_resolver) {
@@ -17,8 +22,6 @@ static TfLiteStatus RegisterOps(NextKeyOpsResolver &op_resolver) {
   TF_LITE_ENSURE_STATUS(op_resolver.AddSoftmax());
   return kTfLiteOk;
 }
-
-tflite::MicroInterpreter *interpreter_ptr = nullptr;
 
 void model_setup() {
 
@@ -44,14 +47,12 @@ void model_setup() {
   // initializing interpreter
   static tflite::MicroInterpreter interpreter(model, op_resolver, tensor_arena,
                                               tensor_arena_size);
-
-  interpreter_ptr = &interpreter;
-
   // allocating memory
   interpreter.AllocateTensors();
 
-  // pointer to model's input tnesor
-  TfLiteTensor *input = interpreter.input(0);
+  interpreter_ptr = &interpreter;
+
+  input_tensor_ptr = interpreter.input(0);
 }
 
 int logTest(int x) {
