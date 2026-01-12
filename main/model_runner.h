@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+void model_setup();
+
 int logTest(int x);
 
 #ifdef __cplusplus
