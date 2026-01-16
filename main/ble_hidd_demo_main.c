@@ -221,6 +221,8 @@ void hid_demo_task(void *pvParameters) {
 void app_main(void) {
   int var = logTest(5);
 
+  model_setup();
+
   ESP_LOGI(HID_DEMO_TAG, "Var is %d", var);
   // esp_err_t ret;
   //
