@@ -1,4 +1,7 @@
-#include <stdio.h>
+#include <cstdint>
+#include <cstddef>
+#include <cstring>
+#include <string.h>
 
 #include "esp_heap_caps.h"
 #include "model_runner.h"
@@ -10,6 +13,9 @@
 #include "tensorflow/lite/schema/schema_generated.h"
 
 // global vars
+static constexpr size_t kMaxContext = 40;
+static constexpr const char* kVocab = "\n !\"&\'(),-.0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+static constexpr uint8_t kPadEncoding = 1; 
 static tflite::MicroInterpreter *interpreter_ptr = nullptr;
 static TfLiteTensor *input_tensor_ptr =
     nullptr; // pointer to model's input tensor
@@ -30,7 +36,7 @@ static TfLiteStatus RegisterOps(NextKeyOpsResolver &op_resolver) {
   return kTfLiteOk;
 }
 
-constexpr int kTensorArenaSize = 60 * 1024;
+constexpr size_t kTensorArenaSize = 60 * 1024;
 uint8_t *tensor_arena = nullptr;
 
 void model_setup() {
@@ -112,6 +118,37 @@ void model_setup() {
       MicroPrintf("Invoked successfully");
   }
 
+}
+
+int32_t run_inference(const char* input, const size_t len) {
+
+    if (strnlen(input, kMaxContext) != len) {
+        MicroPrintf("Error: input length does not match len");
+        return -1;
+    } 
+
+    if (len > kMaxContext) {
+        MicroPrintf("Error: len cannot exceed %d", kMaxContext);
+        return -1;
+    }
+
+    uint8_t encoded_input[kMaxContext];
+
+    // padding to kMaxContext
+    size_t pad_i = 0;
+    for (; pad_i < kMaxContext - len; pad_i++) {
+        encoded_input[pad_i] = kPadEncoding;
+    }
+
+    // encoding
+    for (size_t i = 0; i < len; i++) {
+        encoded_input[pad_i+i] = strchr(kVocab, input[i]) - kVocab;
+    }
+
+    for (size_t i = 0; i < kMaxContext; i++) {
+        MicroPrintf("%d ", encoded_input[i]);
+    }
+    return -1;
 }
 
 int logTest(int x) {
