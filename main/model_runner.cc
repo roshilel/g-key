@@ -1,5 +1,5 @@
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <string.h>
 
@@ -14,8 +14,8 @@
 
 // global vars
 static constexpr size_t kMaxContext = 40;
-static constexpr const char* kVocab = "\n !\"&\'(),-.0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
-static constexpr uint8_t kPadEncoding = 1; 
+static constexpr const char *kVocab = "\n !\"&\'(),-.0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+static constexpr uint8_t kPadEncoding = 1;
 static tflite::MicroInterpreter *interpreter_ptr = nullptr;
 static TfLiteTensor *input_tensor_ptr =
     nullptr; // pointer to model's input tensor
@@ -53,7 +53,7 @@ void model_setup() {
     return;
   }
 
-  // allocate in to PSRAM 
+  // allocate in to PSRAM
   MicroPrintf("Attempting to allocate %d bytes in PSRAM...", kTensorArenaSize);
   tensor_arena = (uint8_t *)heap_caps_malloc(
       kTensorArenaSize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -107,48 +107,64 @@ void model_setup() {
   input_tensor_ptr = temp_input_tensor_ptr;
 
   for (int i = 0; i < 40; i++) {
-    input_tensor_ptr->data.i32[i] = 0; 
+    input_tensor_ptr->data.i32[i] = 0;
   }
 
   TfLiteStatus invoke_status = interpreter_ptr->Invoke();
 
   if (invoke_status != kTfLiteOk) {
-      MicroPrintf("Invoke failed");
+    MicroPrintf("Invoke failed");
   } else {
-      MicroPrintf("Invoked successfully");
+    MicroPrintf("Invoked successfully");
   }
-
 }
 
-int32_t run_inference(const char* input, const size_t len) {
+int32_t run_inference(const char *input, const size_t len) {
 
-    if (strnlen(input, kMaxContext) != len) {
-        MicroPrintf("Error: input length does not match len");
-        return -1;
-    } 
-
-    if (len > kMaxContext) {
-        MicroPrintf("Error: len cannot exceed %d", kMaxContext);
-        return -1;
-    }
-
-    uint8_t encoded_input[kMaxContext];
-
-    // padding to kMaxContext
-    size_t pad_i = 0;
-    for (; pad_i < kMaxContext - len; pad_i++) {
-        encoded_input[pad_i] = kPadEncoding;
-    }
-
-    // encoding
-    for (size_t i = 0; i < len; i++) {
-        encoded_input[pad_i+i] = strchr(kVocab, input[i]) - kVocab;
-    }
-
-    for (size_t i = 0; i < kMaxContext; i++) {
-        MicroPrintf("%d ", encoded_input[i]);
-    }
+  if (strnlen(input, kMaxContext) != len) {
+    MicroPrintf("Error: input length does not match len");
     return -1;
+  }
+
+  if (len > kMaxContext) {
+    MicroPrintf("Error: len cannot exceed %d", kMaxContext);
+    return -1;
+  }
+
+  int32_t encoded_input[kMaxContext];
+
+  // padding to kMaxContext
+  size_t pad_i = 0;
+  for (; pad_i < kMaxContext - len; pad_i++) {
+    encoded_input[pad_i] = kPadEncoding;
+  }
+
+  // encoding
+  for (size_t i = 0; i < len; i++) {
+    encoded_input[pad_i + i] = strchr(kVocab, input[i]) - kVocab;
+  }
+
+  // print encoded input
+  // for (size_t i = 0; i < kMaxContext; i++) {
+  //   MicroPrintf("%d ", encoded_input[i]);
+  // }
+
+  // copy into input tensor
+  if (sizeof(encoded_input) != input_tensor_ptr->bytes) {
+    MicroPrintf("Error: encoded input does not match input tensor size");
+    return -1;
+  }
+
+  memcpy(input_tensor_ptr->data.i32, encoded_input, sizeof(encoded_input));
+
+  // run inference
+  TfLiteStatus invoke_status = interpreter_ptr->Invoke();
+  if (invoke_status != kTfLiteOk) {
+    MicroPrintf("Error: invoke failed");
+    return -1;
+  } 
+
+  return -1;
 }
 
 int logTest(int x) {
