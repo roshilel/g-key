@@ -14,7 +14,8 @@
 
 // global vars
 static constexpr size_t kMaxContext = 40;
-static constexpr const char *kVocab = "\n !\"&\'(),-.0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+static constexpr char kVocab[] = "\n !\"&\'(),-.0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+static constexpr size_t kVocabSize = sizeof(kVocab) - 1;
 static constexpr uint8_t kPadEncoding = 1;
 static tflite::MicroInterpreter *interpreter_ptr = nullptr;
 static TfLiteTensor *input_tensor_ptr =
@@ -141,6 +142,7 @@ int32_t run_inference(const char *input, const size_t len) {
 
   // encoding
   for (size_t i = 0; i < len; i++) {
+    // TODO: Add NULL exception handling
     encoded_input[pad_i + i] = strchr(kVocab, input[i]) - kVocab;
   }
 
@@ -164,7 +166,31 @@ int32_t run_inference(const char *input, const size_t len) {
     return -1;
   } 
 
-  return -1;
+  TfLiteTensor* output_tensor_ptr = interpreter_ptr->output(0);
+
+  size_t output_size = output_tensor_ptr->bytes / sizeof(float);
+
+  if (output_size != kVocabSize) {
+    MicroPrintf("Error: output size(%d) does not match vocab size(%d)", output_size, kVocabSize);
+    return -1;
+  }
+
+  int32_t pred_id = 0;
+  float max_score = 0;
+
+  // find id with largest probability
+  for (size_t i = 0; i < kVocabSize; i++) {
+      float cur_score = output_tensor_ptr->data.f[i];
+      if (cur_score > max_score) {
+          max_score = cur_score;
+          pred_id = i;
+      }
+  }
+
+  MicroPrintf("\'%c\': %d", kVocab[pred_id], pred_id);
+  MicroPrintf("Confidence: %f", max_score);
+
+  return 0;
 }
 
 int logTest(int x) {

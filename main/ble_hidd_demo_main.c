@@ -223,7 +223,7 @@ void app_main(void) {
 
   model_setup();
 
-  run_inference("Hello, my name is Sherlock Holmes", 33);
+  run_inference("Is this the real life? Is this just fa", 38);
 
   ESP_LOGI(HID_DEMO_TAG, "Var is %d", var);
   // esp_err_t ret;
