@@ -190,7 +190,7 @@ int32_t run_inference(const char *input, const size_t len) {
   MicroPrintf("\'%c\': %d", kVocab[pred_id], pred_id);
   MicroPrintf("Confidence: %f", max_score);
 
-  return 0;
+  return kVocab[pred_id];
 }
 
 int logTest(int x) {

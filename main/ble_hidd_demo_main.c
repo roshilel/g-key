@@ -237,12 +237,25 @@ void app_main(void) {
   uart_driver_install(UART_NUM_0, 256, 0, 0, NULL, 0);
   ESP_LOGI(HID_DEMO_TAG, "Initialized UART...");
 
+  model_setup();
+
+  char input_buffer[40];
+  size_t input_idx = 0;
+
   while (1) {
     uint8_t data;
 
     if (uart_read_bytes(UART_NUM_0, &data, 1, 0) > 0) {
       char c = (char)data;
-      ESP_LOGI(HID_DEMO_TAG, "key pressed: %c", c);
+      if (input_idx < 40) {
+        input_buffer[input_idx] = c;
+        input_idx++;
+      } else {
+        memmove(input_buffer, input_buffer + 1, 39);
+        input_buffer[39] = c;
+      }
+      int32_t pred_char = run_inference(input_buffer, input_idx);
+      ESP_LOGI(HID_DEMO_TAG, "predicted character: %c", (char)pred_char);
     }
 
     vTaskDelay(pdMS_TO_TICKS(10));
