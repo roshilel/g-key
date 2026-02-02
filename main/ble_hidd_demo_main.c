@@ -12,6 +12,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
+#include "hal/uart_types.h"
 #include "nvs_flash.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +28,7 @@
 #include "esp_hidd_prf_api.h"
 #include "hid_dev.h"
 
+#include "driver/uart.h"
 #include "model_runner.h"
 
 /**
@@ -219,13 +221,33 @@ void hid_demo_task(void *pvParameters) {
 }
 
 void app_main(void) {
-  int var = logTest(5);
+  // int var = logTest(5);
 
-  model_setup();
+  // model_setup();
 
-  run_inference("Is this the real life? Is this just fa", 38);
+  // run_inference("Is this the real life? Is this just fa", 38);
 
-  ESP_LOGI(HID_DEMO_TAG, "Var is %d", var);
+  // ESP_LOGI(HID_DEMO_TAG, "Var is %d", var);
+  uart_config_t config = {.baud_rate = 115200,
+                          .data_bits = UART_DATA_8_BITS,
+                          .parity = UART_PARITY_DISABLE,
+                          .stop_bits = UART_STOP_BITS_1,
+                          .flow_ctrl = UART_HW_FLOWCTRL_DISABLE};
+  uart_param_config(UART_NUM_0, &config);
+  uart_driver_install(UART_NUM_0, 256, 0, 0, NULL, 0);
+  ESP_LOGI(HID_DEMO_TAG, "Initialized UART...");
+
+  while (1) {
+    uint8_t data;
+
+    if (uart_read_bytes(UART_NUM_0, &data, 1, 0) > 0) {
+      char c = (char)data;
+      ESP_LOGI(HID_DEMO_TAG, "key pressed: %c", c);
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+
   // esp_err_t ret;
   //
   // // Initialize NVS.

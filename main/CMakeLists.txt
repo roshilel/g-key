@@ -4,7 +4,7 @@ idf_component_register(SRCS "ble_hidd_demo_main.c"
                             "hid_device_le_prf.c"
                             "model/conv1d_nonhybrid.cc"
                             "model_runner.cc"
-                    PRIV_REQUIRES bt nvs_flash esp_driver_gpio esp-tflite-micro
+                    PRIV_REQUIRES bt nvs_flash esp_driver_gpio esp-tflite-micro esp_driver_uart
                     INCLUDE_DIRS ".")
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-const-variable)
