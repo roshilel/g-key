@@ -239,7 +239,8 @@ void app_main(void) {
 
   model_setup();
 
-  char input_buffer[40];
+  char input_buffer[41] = {0};
+  input_buffer[40] = '\0';
   size_t input_idx = 0;
 
   while (1) {
