@@ -14,7 +14,7 @@
 
 // global vars
 static constexpr size_t kMaxContext = 40;
-static constexpr char kVocab[] = "\n !\"&\'(),-.0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+extern "C" const char kVocab[] = "\n !\"&\'(),-.0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 static constexpr size_t kVocabSize = sizeof(kVocab) - 1;
 static constexpr uint8_t kPadEncoding = 1;
 static tflite::MicroInterpreter *interpreter_ptr = nullptr;

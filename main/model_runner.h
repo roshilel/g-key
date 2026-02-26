@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+extern const char kVocab[];
+
 void model_setup();
 
 int32_t run_inference(const char* input, const size_t len);

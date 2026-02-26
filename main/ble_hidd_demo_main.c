@@ -14,6 +14,7 @@
 #include "freertos/task.h"
 #include "hal/uart_types.h"
 #include "nvs_flash.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -190,12 +191,66 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
   }
 }
 
+uint8_t char_to_hid_key(char c) {
+  if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+    return HID_KEY_A + (c - 'a');
+  } else if (c == '0') {
+    return HID_KEY_0;
+  } else if (c >= '1' && c <= '9') {
+    return HID_KEY_1 + (c - '1');
+  } else {
+    switch (c) {
+    case ' ':
+      return HID_KEY_SPACEBAR;
+    case '\n':
+      return HID_KEY_RETURN;
+    case '-':
+      return HID_KEY_MINUS;
+    case '=':
+      return HID_KEY_EQUAL;
+    case ',':
+      return HID_KEY_COMMA;
+    case '.':
+      return 55; // HID_KEY_PERIOD;
+    case '/':
+    case '?':    // shift
+      return 56; // HID_KEY_FORWARD_SLASH;
+    case ';':
+      return HID_KEY_SEMI_COLON;
+    case '\'':
+      return 52; // HID_KEY_APOSTROPHE;
+    default:
+      return 0;
+    }
+  }
+}
+
+bool needs_shift(char c) {
+  if (c >= 'A' && c <= 'Z')
+    return true;
+
+  switch (c) {
+  case '!':
+  case '"':
+  case '&':
+  case '(':
+  case ')':
+  case ':':
+  case '?':
+  case '_':
+    return true;
+  default:
+    return false;
+  }
+}
+
 void hid_demo_task(void *pvParameters) {
   vTaskDelay(1000 / portTICK_PERIOD_MS);
 
   char input_buffer[41] = {0};
   input_buffer[40] = '\0';
   size_t input_idx = 0;
+  int32_t pred_char = '\0';
 
   while (1) {
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -205,20 +260,36 @@ void hid_demo_task(void *pvParameters) {
 
       if (uart_read_bytes(UART_NUM_0, &data, 1, 0) > 0) {
         char c = (char)data;
-        if (input_idx < 40) {
-          input_buffer[input_idx] = c;
-          input_idx++;
+        ESP_LOGI(HID_DEMO_TAG, "input character: %c", c);
+        if (strchr(kVocab, c) != NULL) {
+          if (input_idx < 40) {
+            input_buffer[input_idx] = c;
+            input_idx++;
+          } else {
+            memmove(input_buffer, input_buffer + 1, 39);
+            input_buffer[39] = c;
+          }
+          pred_char = run_inference(input_buffer, input_idx);
+          ESP_LOGI(HID_DEMO_TAG, "predicted character: %c", (char)pred_char);
         } else {
-          memmove(input_buffer, input_buffer + 1, 39);
-          input_buffer[39] = c;
+          uint8_t hid_key = char_to_hid_key((char)pred_char);
+
+          if (hid_key != 0) {
+            uint8_t key_arr[1] = {hid_key};
+            uint8_t modifier = 0;
+
+            if (needs_shift((char)pred_char))
+              modifier = 2;
+
+            esp_hidd_send_keyboard_value(hid_conn_id, modifier, key_arr, 1);
+
+            esp_hidd_send_keyboard_value(hid_conn_id, 0, NULL, 0);
+          }
         }
-        int32_t pred_char = run_inference(input_buffer, input_idx);
-        ESP_LOGI(HID_DEMO_TAG, "predicted character: %c", (char)pred_char);
       }
 
       // char *thisTaskName = pcTaskGetName(NULL);
       // ESP_LOGI(thisTaskName, "ESP-32 KEYBOARD connected");
-      // uint8_t g_key[1] = {HID_KEY_G};
       //
       // esp_hidd_send_keyboard_value(hid_conn_id, 0, g_key, 1);
       //
